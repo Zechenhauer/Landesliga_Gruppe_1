@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SV Budberg — Landesliga Niederrhein Gruppe 1</title>
+    <!-- Supabase Client Bibliothek laden -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+            --primary-blue: #0c2340;
+            --primary-blue-hover: #16365c;
+            --accent-green: #2ea043;
+            --accent-red: #f85149;
+            --svb-bright-blue: #58a6ff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 0;
+            color: #ffffff;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        h2 span {
+            color: var(--svb-bright-blue);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .section-box {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            background-color: var(--primary-blue);
+            color: var(--svb-bright-blue);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .matchday-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .matchday-btn {
+            background: #21262d;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .matchday-btn:hover { background: var(--primary-blue-hover); border-color: var(--svb-bright-blue); }
+
+        .svb-highlight { color: var(--svb-bright-blue) !important; font-weight: bold; }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        th {
+            background-color: var(--primary-blue);
+            color: #ffffff;
+            padding: 10px 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            border-bottom: 2px solid var(--border-color);
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        tr:hover { background-color: rgba(255,255,255,0.02); }
+
+        tr.rank-first td {
+            background: rgba(46, 160, 67, 0.12);
+            color: #3fb950;
+        }
+        tr.rank-last td {
+            background: rgba(248, 81, 73, 0.12);
+            color: #f85149;
+        }
+
+        tr.svb-team-row td {
+            font-weight: bold;
+            color: var(--svb-bright-blue);
+            background: rgba(88, 166, 255, 0.12);
+        }
+
+        .admin-toggle-wrapper {
+            text-align: right;
+            margin-top: 15px;
+        }
+        .admin-toggle-btn {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .admin-toggle-btn:hover {
+            color: var(--svb-bright-blue);
+            border-color: var(--svb-bright-blue);
+        }
+
+        .admin-card {
+            background: #21262d;
+            border: 1px solid var(--svb-bright-blue);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .match-input-card {
+            background: #161b22;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 2fr repeat(2, 1fr);
+            gap: 8px;
+            align-items: end;
+        }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr 1fr; }
+            .form-grid .form-group-team { grid-column: span 2; }
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .form-control {
+            width: 100%;
+            padding: 6px;
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .form-control:focus { border-color: var(--svb-bright-blue); outline: none; }
+
+        .btn {
+            background: var(--svb-bright-blue);
+            color: #000000;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #79c0ff; }
+        
+        .btn-danger {
+            background: transparent;
+            border: none;
+            color: var(--accent-red);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title-row">
+        <h2>SV Budberg <span>Landesliga</span></h2>
+    </div>
+    <div class="subtitle" id="leagueSubtitle">Landesliga Niederrhein Gruppe 1 — Spielplan & Tabelle</div>
+    <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 15px;">⚡ Web-App & Management: Jürgen Schützendorf</div>
+
+    <!-- SPIELTAGS-TABELLE -->
+    <div class="section-box">
+        <div class="section-header" id="matchdayTableHeader">Spieltag 1 — Spiele & Ergebnisse</div>
+        <div class="matchday-controls">
+            <button class="matchday-btn" onclick="changeMatchday(-1)">◀ Vorheriger Spieltag</button>
+            <strong id="matchdayDisplay" style="color: var(--svb-bright-blue); font-size: 1.1rem;">Spieltag 1</strong>
+            <button class="matchday-btn" onclick="changeMatchday(1)">Nächster Spieltag ▶</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">Termin</th>
+                        <th style="text-align: right;">Heimmannschaft</th>
+                        <th style="text-align: center; width: 100px;">Ergebnis</th>
+                        <th>Gastmannschaft</th>
+                        <th style="width: 40px; text-align: center;"></th>
+                    </tr>
+                </thead>
+                <tbody id="matchdayTableBody">
+                    <!-- Wird dynamisch gefüllt -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- GESAMT-TABELLEN-ANSICHT -->
+    <div class="section-box">
+        <div class="section-header">Landesliga-Tabelle (Gesamt)</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 35px;">Pl.</th>
+                        <th>Mannschaft</th>
+                        <th style="text-align: center;">Sp</th>
+                        <th style="text-align: center;">S</th>
+                        <th style="text-align: center;">U</th>
+                        <th style="text-align: center;">N</th>
+                        <th style="text-align: center;">Tore</th>
+                        <th style="text-align: center;">Diff</th>
+                        <th style="text-align: center;">Punkte</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Wird automatisch aus Spieltagen berechnet -->
+                </tbody>
+            </table>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 0.75rem; color: var(--text-muted);">
+            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(46, 160, 67, 0.2); border-radius: 2px; display: inline-block;"></span> Aufstiegsplatz (Oberliga)</div>
+            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(248, 81, 73, 0.2); border-radius: 2px; display: inline-block;"></span> Abstiegsplatz</div>
+        </div>
+    </div>
+
+    <!-- ERGEBNISSE EINTRAGEN / BEARBEITEN -->
+    <div class="admin-card" id="adminCard">
+        <div style="font-weight: bold; color: var(--svb-bright-blue); margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>✏️ Ergebnisse für <span id="adminMatchdayLabel">Spieltag 1</span> erfassen</span>
+            <span style="font-size: 0.7rem; color: var(--accent-green);">● Admin-Modus Aktiv</span>
+        </div>
+        
+        <div id="matchInputsContainer"></div>
+        <button class="btn" onclick="saveAllMatches()">Alle Ergebnisse für diesen Spieltag speichern</button>
+    </div>
+
+    <!-- ADMIN SCHALTER UNTEN -->
+    <div class="admin-toggle-wrapper">
+        <button class="admin-toggle-btn" onclick="toggleAdminMode()">⚙️ Admin-Zugang</button>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // SUPABASE EINSTELLUNGEN
+    // ==========================================
+    const SUPABASE_URL = 'https://lhusylpjnujlqomougmg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_yXEueWILvAq-Vm2VfTuYyg_BIQeE1KK';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const ADMIN_PIN = "1921";
+    let isAdmin = false;
+
+    let leagueData = {
+        currentMatchday: 1,
+        teams: [
+            "SV Budberg",
+            "ASV Süchteln",
+            "SC Victoria Mennrath",
+            "SF Neuwerk 06",
+            "VSF Amern",
+            "SC Union Nettetal",
+            "VfB Homberg",
+            "1. FC Lintfort",
+            "SV Viktoria Goch",
+            "1. FC Kleve",
+            "Rheinland Hamborn",
+            "VfB Speldorf",
+            "Mülheimer FC 97",
+            "Duisburger FV 08",
+            "VfB Bottrop",
+            "DJK Arminia Klosterhardt",
+            "SV Biemenhorst",
+            "VfL Rhede"
+        ],
+        matches: {
+            "1": [
+                { home: "VfB Bottrop", away: "DJK Arminia Klosterhardt", date: "2026-08-14", time: "19:30" },
+                { home: "SF Neuwerk 06", away: "VSF Amern", date: "2026-08-15", time: "16:00" },
+                { home: "1. FC Lintfort", away: "ASV Süchteln", date: "2026-08-16", time: "15:00" },
+                { home: "VfL Rhede", away: "1. FC Kleve", date: "2026-08-16", time: "15:00" },
+                { home: "SV Budberg", away: "VfB Speldorf", date: "2026-08-16", time: "15:00", homeScore: 3, awayScore: 0 },
+                { home: "VfB Homberg", away: "SC Union Nettetal", date: "2026-08-16", time: "15:00" },
+                { home: "SV Biemenhorst", away: "SC Victoria Mennrath", date: "2026-08-16", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "SV Viktoria Goch", date: "2026-08-16", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "Duisburger FV 08", date: "2026-08-16", time: "15:30" }
+            ],
+            "2": [
+                { home: "SC Victoria Mennrath", away: "SF Neuwerk 06", date: "2026-08-21", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "VfB Bottrop", date: "2026-08-21", time: "20:00" },
+                { home: "1. FC Kleve", away: "SV Biemenhorst", date: "2026-08-23", time: "15:00" },
+                { home: "ASV Süchteln", away: "Mülheimer FC 97", date: "2026-08-23", time: "15:00" },
+                { home: "Duisburger FV 08", away: "VfB Homberg", date: "2026-08-23", time: "15:30" },
+                { home: "SC Union Nettetal", away: "SV Budberg", date: "2026-08-23", time: "15:30" },
+                { home: "VfB Speldorf", away: "VfL Rhede", date: "2026-08-23", time: "15:30" },
+                { home: "VSF Amern", away: "Rheinland Hamborn", date: "2026-08-23", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "1. FC Lintfort", date: "2026-08-23", time: "15:30" }
+            ],
+            "3": [
+                { home: "VfL Rhede", away: "SC Union Nettetal", date: "2026-08-28", time: "20:00" },
+                { home: "1. FC Lintfort", away: "Mülheimer FC 97", date: "2026-08-30", time: "15:00" },
+                { home: "SF Neuwerk 06", away: "1. FC Kleve", date: "2026-08-30", time: "15:00" },
+                { home: "SV Budberg", away: "Duisburger FV 08", date: "2026-08-30", time: "15:00" },
+                { home: "VfB Homberg", away: "ASV Süchteln", date: "2026-08-30", time: "15:00" },
+                { home: "SV Biemenhorst", away: "VfB Speldorf", date: "2026-08-30", time: "15:15" },
+                { home: "VfB Bottrop", away: "VSF Amern", date: "2026-08-30", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "SC Victoria Mennrath", date: "2026-08-30", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "SV Viktoria Goch", date: "2026-08-30", time: "16:30" }
+            ],
+            "4": [
+                { home: "SC Victoria Mennrath", away: "VfB Bottrop", date: "2026-09-04", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "1. FC Lintfort", date: "2026-09-04", time: "20:00" },
+                { home: "1. FC Kleve", away: "Rheinland Hamborn", date: "2026-09-06", time: "15:00" },
+                { home: "ASV Süchteln", away: "SV Budberg", date: "2026-09-06", time: "15:00" },
+                { home: "Duisburger FV 08", away: "VfL Rhede", date: "2026-09-06", time: "15:30" },
+                { home: "SC Union Nettetal", away: "SV Biemenhorst", date: "2026-09-06", time: "15:30" },
+                { home: "VfB Speldorf", away: "SF Neuwerk 06", date: "2026-09-06", time: "15:30" },
+                { home: "VSF Amern", away: "DJK Arminia Klosterhardt", date: "2026-09-06", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "VfB Homberg", date: "2026-09-06", time: "15:30" }
+            ],
+            "5": [
+                { home: "1. FC Lintfort", away: "VfB Homberg", date: "2026-09-13", time: "15:00" },
+                { home: "SF Neuwerk 06", away: "SC Union Nettetal", date: "2026-09-13", time: "15:00" },
+                { home: "VfL Rhede", away: "ASV Süchteln", date: "2026-09-13", time: "15:00" },
+                { home: "SV Budberg", away: "Mülheimer FC 97", date: "2026-09-13", time: "15:00" },
+                { home: "SV Biemenhorst", away: "Duisburger FV 08", date: "2026-09-13", time: "15:15" },
+                { home: "VfB Bottrop", away: "1. FC Kleve", date: "2026-09-13", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "VfB Speldorf", date: "2026-09-13", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "SC Victoria Mennrath", date: "2026-09-13", time: "15:30" }
+            ],
+            "6": [
+                { home: "SC Victoria Mennrath", away: "SV Viktoria Goch", date: "2026-09-18", time: "20:00" },
+                { home: "1. FC Kleve", away: "DJK Arminia Klosterhardt", date: "2026-09-20", time: "15:00" },
+                { home: "VFB Homberg", away: "SV Budberg", date: "2026-09-20", time: "15:00" },
+                { home: "ASV Süchteln", away: "SV Biemenhorst", date: "2026-09-20", time: "15:00" },
+                { home: "Duisburger FV 08", away: "SF Neuwerk 06", date: "2026-09-20", time: "15:30" },
+                { home: "SC Union Nettetal", away: "Rheinland Hamborn", date: "2026-09-20", time: "15:30" },
+                { home: "VfB Speldorf", away: "VfB Bottrop", date: "2026-09-20", time: "15:30" },
+                { home: "VSF Amern", away: "1. FC Lintfort", date: "2026-09-20", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "VfL Rhede", date: "2026-09-20", time: "15:30" }
+            ],
+            "7": [
+                { home: "SV Viktoria Goch", away: "1. FC Kleve", date: "2026-09-25", time: "20:00" },
+                { home: "1. FC Lintfort", away: "SV Budberg", date: "2026-09-27", time: "15:00" },
+                { home: "SF Neuwerk 06", away: "ASV Süchteln", date: "2026-09-27", time: "15:00" },
+                { home: "VfL Rhede", away: "VFB Homberg", date: "2026-09-27", time: "15:00" },
+                { home: "SV Biemenhorst", away: "Mülheimer FC 97", date: "2026-09-27", time: "15:15" },
+                { home: "VfB Bottrop", away: "SC Union Nettetal", date: "2026-09-27", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "Duisburger FV 08", date: "2026-09-27", time: "15:30" },
+                { home: "VSF Amern", away: "SC Victoria Mennrath", date: "2026-09-27", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "VfB Speldorf", date: "2026-09-27", time: "15:30" }
+            ],
+            "8": [
+                { home: "SC Victoria Mennrath", away: "1. FC Lintfort", date: "2026-10-02", time: "20:00" },
+                { home: "1. FC Kleve", away: "VSF Amern", date: "2026-10-04", time: "15:00" },
+                { home: "SV Budberg", away: "VfL Rhede", date: "2026-10-04", time: "15:00" },
+                { home: "VFB Homberg", away: "SV Biemenhorst", date: "2026-10-04", time: "15:00" },
+                { home: "ASV Süchteln", away: "Rheinland Hamborn", date: "2026-10-04", time: "15:00" },
+                { home: "Duisburger FV 08", away: "VfB Bottrop", date: "2026-10-04", time: "15:30" },
+                { home: "SC Union Nettetal", away: "DJK Arminia Klosterhardt", date: "2026-10-04", time: "15:30" },
+                { home: "VfB Speldorf", away: "SV Viktoria Goch", date: "2026-10-04", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "SF Neuwerk 06", date: "2026-10-04", time: "15:30" }
+            ],
+            "9": [
+                { home: "1. FC Lintfort", away: "VfL Rhede", date: "2026-10-09", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "1. FC Kleve", date: "2026-10-09", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "SC Union Nettetal", date: "2026-10-09", time: "20:00" },
+                { home: "SF Neuwerk 06", away: "VFB Homberg", date: "2026-10-11", time: "15:00" },
+                { home: "SV Biemenhorst", away: "SV Budberg", date: "2026-10-11", time: "15:15" },
+                { home: "VfB Bottrop", away: "ASV Süchteln", date: "2026-10-11", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "Mülheimer FC 97", date: "2026-10-11", time: "15:30" },
+                { home: "VSF Amern", away: "VfB Speldorf", date: "2026-10-11", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "Duisburger FV 08", date: "2026-10-11", time: "15:30" }
+            ],
+            "10": [
+                { home: "VfL Rhede", away: "SV Biemenhorst", date: "2026-10-16", time: "19:30" },
+                { home: "1. FC Kleve", away: "1. FC Lintfort", date: "2026-10-18", time: "15:00" },
+                { home: "SV Budberg", away: "SF Neuwerk 06", date: "2026-10-18", time: "15:00" },
+                { home: "VFB Homberg", away: "Rheinland Hamborn", date: "2026-10-18", time: "15:00" },
+                { home: "ASV Süchteln", away: "DJK Arminia Klosterhardt", date: "2026-10-18", time: "15:00" },
+                { home: "Duisburger FV 08", away: "SV Viktoria Goch", date: "2026-10-18", time: "15:30" },
+                { home: "SC Union Nettetal", away: "VSF Amern", date: "2026-10-18", time: "15:30" },
+                { home: "VfB Speldorf", away: "SC Victoria Mennrath", date: "2026-10-18", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "VfB Bottrop", date: "2026-10-18", time: "15:30" }
+            ],
+            "11": [
+                { home: "1. FC Kleve", away: "VfB Speldorf", date: "2026-10-23", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "SC Union Nettetal", date: "2026-10-23", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "ASV Süchteln", date: "2026-10-23", time: "20:00" },
+                { home: "1. FC Lintfort", away: "SV Biemenhorst", date: "2026-10-25", time: "15:00" },
+                { home: "SF Neuwerk 06", away: "VfL Rhede", date: "2026-10-25", time: "15:00" },
+                { home: "VfB Bottrop", away: "VFB Homberg", date: "2026-10-25", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "SV Budberg", date: "2026-10-25", time: "15:30" },
+                { home: "VSF Amern", away: "Duisburger FV 08", date: "2026-10-25", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "Mülheimer FC 97", date: "2026-10-25", time: "15:30" }
+            ],
+            "12": [
+                { home: "VfL Rhede", away: "Rheinland Hamborn", date: "2026-11-08", time: "15:00" },
+                { home: "SV Budberg", away: "VfB Bottrop", date: "2026-11-08", time: "15:00" },
+                { home: "VFB Homberg", away: "DJK Arminia Klosterhardt", date: "2026-11-08", time: "15:00" },
+                { home: "ASV Süchteln", away: "VSF Amern", date: "2026-11-08", time: "15:00" },
+                { home: "SV Biemenhorst", away: "SF Neuwerk 06", date: "2026-11-08", time: "15:15" },
+                { home: "Duisburger FV 08", away: "SC Victoria Mennrath", date: "2026-11-08", time: "15:30" },
+                { home: "SC Union Nettetal", away: "1. FC Kleve", date: "2026-11-08", time: "15:30" },
+                { home: "VfB Speldorf", away: "1. FC Lintfort", date: "2026-11-08", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "SV Viktoria Goch", date: "2026-11-08", time: "15:30" }
+            ],
+            "13": [
+                { home: "SC Victoria Mennrath", away: "ASV Süchteln", date: "2026-11-13", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "VFB Homberg", date: "2026-11-13", time: "20:00" },
+                { home: "1. FC Lintfort", away: "SF Neuwerk 06", date: "2026-11-15", time: "15:00" },
+                { home: "1. FC Kleve", away: "Duisburger FV 08", date: "2026-11-15", time: "15:00" },
+                { home: "VfB Bottrop", away: "VfL Rhede", date: "2026-11-15", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "SV Biemenhorst", date: "2026-11-15", time: "15:30" },
+                { home: "VfB Speldorf", away: "SC Union Nettetal", date: "2026-11-15", time: "15:30" },
+                { home: "VSF Amern", away: "Mülheimer FC 97", date: "2026-11-15", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "SV Budberg", date: "2026-11-15", time: "15:30" }
+            ],
+            "14": [
+                { home: "Sportfreunde 06 Neuwerk", away: "Rheinland Hamborn", date: "2026-11-29", time: "15:00" },
+                { home: "VfL Rhede", away: "DJK Arminia Klosterhardt", date: "2026-11-29", time: "15:00" },
+                { home: "SV Budberg", away: "SV Viktoria Goch", date: "2026-11-29", time: "15:00" },
+                { home: "VFB Homberg", away: "VSF Amern", date: "2026-11-29", time: "15:00" },
+                { home: "ASV Süchteln", away: "1. FC Kleve", date: "2026-11-29", time: "15:00" },
+                { home: "SV Biemenhorst", away: "VfB Bottrop", date: "2026-11-29", time: "15:15" },
+                { home: "Duisburger FV 08", away: "VfB Speldorf", date: "2026-11-29", time: "15:30" },
+                { home: "SC Union Nettetal", away: "1. FC Lintfort", date: "2026-11-29", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "SC Victoria Mennrath", date: "2026-11-29", time: "15:30" }
+            ],
+            "15": [
+                { home: "SC Victoria Mennrath", away: "VFB Homberg", date: "2026-12-04", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "VfL Rhede", date: "2026-12-04", time: "20:00" },
+                { home: "1. FC Lintfort", away: "Rheinland Hamborn", date: "2026-12-06", time: "15:00" },
+                { home: "1. FC Kleve", away: "Mülheimer FC 97", date: "2026-12-06", time: "15:00" },
+                { home: "VfB Bottrop", away: "Sportfreunde 06 Neuwerk", date: "2026-12-06", time: "15:15" },
+                { home: "SC Union Nettetal", away: "Duisburger FV 08", date: "2026-12-06", time: "15:30" },
+                { home: "VfB Speldorf", away: "ASV Süchteln", date: "2026-12-06", time: "15:30" },
+                { home: "VSF Amern", away: "SV Budberg", date: "2026-12-06", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "SV Biemenhorst", date: "2026-12-06", time: "15:30" }
+            ],
+            "16": [
+                { home: "1. FC Lintfort", away: "Duisburger FV 08", date: "2026-12-13", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "DJK Arminia Klosterhardt", date: "2026-12-13", time: "15:00" },
+                { home: "VfL Rhede", away: "VSF Amern", date: "2026-12-13", time: "15:00" },
+                { home: "SV Budberg", away: "SC Victoria Mennrath", date: "2026-12-13", time: "15:00" },
+                { home: "VFB Homberg", away: "1. FC Kleve", date: "2026-12-13", time: "15:00" },
+                { home: "ASV Süchteln", away: "SC Union Nettetal", date: "2026-12-13", time: "15:00" },
+                { home: "SV Biemenhorst", away: "SV Viktoria Goch", date: "2026-12-13", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "VfB Bottrop", date: "2026-12-13", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "VfB Speldorf", date: "2026-12-13", time: "15:30" }
+            ],
+            "17": [
+                { home: "SC Victoria Mennrath", away: "VfL Rhede", date: "2026-12-18", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "Sportfreunde 06 Neuwerk", date: "2026-12-18", time: "20:00" },
+                { home: "1. FC Kleve", away: "SV Budberg", date: "2026-12-20", time: "15:00" },
+                { home: "VfB Bottrop", away: "1. FC Lintfort", date: "2026-12-20", time: "15:15" },
+                { home: "Duisburger FV 08", away: "ASV Süchteln", date: "2026-12-20", time: "15:30" },
+                { home: "SC Union Nettetal", away: "Mülheimer FC 97", date: "2026-12-20", time: "15:30" },
+                { home: "VfB Speldorf", away: "VFB Homberg", date: "2026-12-20", time: "15:30" },
+                { home: "VSF Amern", away: "SV Biemenhorst", date: "2026-12-20", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "Rheinland Hamborn", date: "2026-12-20", time: "15:30" }
+            ],
+            "18": [
+                { home: "SV Viktoria Goch", away: "Rheinland Hamborn", date: "2027-02-12", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "SV Biemenhorst", date: "2027-02-12", time: "20:00" },
+                { home: "1. FC Kleve", away: "VfL Rhede", date: "2027-02-12", time: "20:00" },
+                { home: "ASV Süchteln", away: "1. FC Lintfort", date: "2027-02-14", time: "15:00" },
+                { home: "VSF Amern", away: "Sportfreunde 06 Neuwerk", date: "2027-02-14", time: "15:30" },
+                { home: "VfB Speldorf", away: "SV Budberg", date: "2027-02-14", time: "15:30" },
+                { home: "SC Union Nettetal", away: "VFB Homberg", date: "2027-02-14", time: "15:30" },
+                { home: "Duisburger FV 08", away: "Mülheimer FC 97", date: "2027-02-14", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "VfB Bottrop", date: "2027-02-14", time: "15:30" }
+            ],
+            "19": [
+                { home: "VFB Homberg", away: "Duisburger FV 08", date: "2027-02-21", time: "15:00" },
+                { home: "SV Budberg", away: "SC Union Nettetal", date: "2027-02-21", time: "15:00" },
+                { home: "VfL Rhede", away: "VfB Speldorf", date: "2027-02-21", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "SC Victoria Mennrath", date: "2027-02-21", time: "15:00" },
+                { home: "1. FC Lintfort", away: "DJK Arminia Klosterhardt", date: "2027-02-21", time: "15:00" },
+                { home: "SV Biemenhorst", away: "1. FC Kleve", date: "2027-02-21", time: "15:15" },
+                { home: "VfB Bottrop", away: "SV Viktoria Goch", date: "2027-02-21", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "VSF Amern", date: "2027-02-21", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "ASV Süchteln", date: "2027-02-21", time: "15:30" }
+            ],
+            "20": [
+                { home: "SC Victoria Mennrath", away: "Rheinland Hamborn", date: "2027-02-26", time: "20:00" },
+                { home: "1. FC Kleve", away: "Sportfreunde 06 Neuwerk", date: "2027-02-26", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "DJK Arminia Klosterhardt", date: "2027-02-26", time: "20:00" },
+                { home: "ASV Süchteln", away: "VFB Homberg", date: "2027-02-28", time: "15:00" },
+                { home: "Mülheimer FC 97", away: "1. FC Lintfort", date: "2027-02-28", time: "15:30" },
+                { home: "VfB Speldorf", away: "SV Biemenhorst", date: "2027-02-28", time: "15:30" },
+                { home: "SC Union Nettetal", away: "VfL Rhede", date: "2027-02-28", time: "15:30" },
+                { home: "Duisburger FV 08", away: "SV Budberg", date: "2027-02-28", time: "15:30" },
+                { home: "VSF Amern", away: "VfB Bottrop", date: "2027-02-28", time: "15:30" }
+            ],
+            "21": [
+                { home: "VfL Rhede", away: "Duisburger FV 08", date: "2027-03-07", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "VfB Speldorf", date: "2027-03-07", time: "15:00" },
+                { home: "1. FC Lintfort", away: "SV Viktoria Goch", date: "2027-03-07", time: "15:00" },
+                { home: "VFB Homberg", away: "Mülheimer FC 97", date: "2027-03-07", time: "15:00" },
+                { home: "SV Budberg", away: "ASV Süchteln", date: "2027-03-07", time: "15:00" },
+                { home: "SV Biemenhorst", away: "SC Union Nettetal", date: "2027-03-07", time: "15:15" },
+                { home: "VfB Bottrop", away: "SC Victoria Mennrath", date: "2027-03-07", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "1. FC Kleve", date: "2027-03-07", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "VSF Amern", date: "2027-03-07", time: "15:30" }
+            ],
+            "22": [
+                { home: "SC Victoria Mennrath", away: "DJK Arminia Klosterhardt", date: "2027-03-12", time: "20:00" },
+                { home: "1. FC Kleve", away: "VfB Bottrop", date: "2027-03-12", time: "20:00" },
+                { home: "VFB Homberg", away: "1. FC Lintfort", date: "2027-03-14", time: "15:00" },
+                { home: "ASV Süchteln", away: "VfL Rhede", date: "2027-03-14", time: "15:00" },
+                { home: "VfB Speldorf", away: "Rheinland Hamborn", date: "2027-03-14", time: "15:30" },
+                { home: "SC Union Nettetal", away: "Sportfreunde 06 Neuwerk", date: "2027-03-14", time: "15:30" },
+                { home: "Duisburger FV 08", away: "SV Biemenhorst", date: "2027-03-14", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "SV Budberg", date: "2027-03-14", time: "15:30" },
+                { home: "VSF Amern", away: "SV Viktoria Goch", date: "2027-03-14", time: "15:30" }
+            ],
+            "23": [
+                { home: "SV Viktoria Goch", away: "SC Victoria Mennrath", date: "2027-03-19", time: "20:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "Duisburger FV 08", date: "2027-03-21", time: "15:00" },
+                { home: "1. FC Lintfort", away: "VSF Amern", date: "2027-03-21", time: "15:00" },
+                { home: "SV Budberg", away: "VFB Homberg", date: "2027-03-21", time: "15:00" },
+                { home: "VfL Rhede", away: "Mülheimer FC 97", date: "2027-03-21", time: "15:00" },
+                { home: "VfB Bottrop", away: "VfB Speldorf", date: "2027-03-21", time: "15:15" },
+                { home: "SV Biemenhorst", away: "ASV Süchteln", date: "2027-03-21", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "SC Union Nettetal", date: "2027-03-21", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "1. FC Kleve", date: "2027-03-21", time: "15:30" }
+            ],
+            "24": [
+                { home: "SV Budberg", away: "1. FC Lintfort", date: "2027-03-25", time: "20:00" },
+                { home: "Duisburger FV 08", away: "Rheinland Hamborn", date: "2027-03-25", time: "20:00" },
+                { home: "ASV Süchteln", away: "Sportfreunde 06 Neuwerk", date: "2027-03-25", time: "20:00" },
+                { home: "Mülheimer FC 97", away: "SV Biemenhorst", date: "2027-03-25", time: "20:00" },
+                { home: "VFB Homberg", away: "VfL Rhede", date: "2027-03-25", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "VSF Amern", date: "2027-03-25", time: "20:00" },
+                { home: "1. FC Kleve", away: "SV Viktoria Goch", date: "2027-03-25", time: "20:00" },
+                { home: "VfB Speldorf", away: "DJK Arminia Klosterhardt", date: "2027-03-25", time: "20:00" },
+                { home: "SC Union Nettetal", away: "VfB Bottrop", date: "2027-03-25", time: "20:00" }
+            ],
+            "25": [
+                { home: "SV Viktoria Goch", away: "VfB Speldorf", date: "2027-04-02", time: "20:00" },
+                { home: "1. FC Lintfort", away: "SC Victoria Mennrath", date: "2027-04-04", time: "15:00" },
+                { home: "VfL Rhede", away: "SV Budberg", date: "2027-04-04", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "Mülheimer FC 97", date: "2027-04-04", time: "15:00" },
+                { home: "VfB Bottrop", away: "Duisburger FV 08", date: "2027-04-04", time: "15:15" },
+                { home: "SV Biemenhorst", away: "VFB Homberg", date: "2027-04-04", time: "15:15" },
+                { home: "DJK Arminia Klosterhardt", away: "SC Union Nettetal", date: "2027-04-04", time: "15:30" },
+                { home: "VSF Amern", away: "1. FC Kleve", date: "2027-04-04", time: "15:30" },
+                { home: "Rheinland Hamborn", away: "ASV Süchteln", date: "2027-04-04", time: "15:30" }
+            ],
+            "26": [
+                { home: "VfL Rhede", away: "1. FC Lintfort", date: "2027-04-11", time: "15:00" },
+                { home: "VFB Homberg", away: "Sportfreunde 06 Neuwerk", date: "2027-04-11", time: "15:00" },
+                { home: "SV Budberg", away: "SV Biemenhorst", date: "2027-04-11", time: "15:00" },
+                { home: "1. FC Kleve", away: "SC Victoria Mennrath", date: "2027-04-11", time: "15:00" },
+                { home: "ASV Süchteln", away: "VfB Bottrop", date: "2027-04-11", time: "15:00" },
+                { home: "Mülheimer FC 97", away: "Rheinland Hamborn", date: "2027-04-11", time: "15:30" },
+                { home: "VfB Speldorf", away: "VSF Amern", date: "2027-04-11", time: "15:30" },
+                { home: "SC Union Nettetal", away: "SV Viktoria Goch", date: "2027-04-11", time: "15:30" },
+                { home: "Duisburger FV 08", away: "DJK Arminia Klosterhardt", date: "2027-04-11", time: "15:30" }
+            ],
+            "27": [
+                { home: "SV Viktoria Goch", away: "Duisburger FV 08", date: "2027-04-16", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "VfB Speldorf", date: "2027-04-16", time: "20:00" },
+                { home: "1. FC Lintfort", away: "1. FC Kleve", date: "2027-04-18", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "SV Budberg", date: "2027-04-18", time: "15:00" },
+                { home: "SV Biemenhorst", away: "VfL Rhede", date: "2027-04-18", time: "15:15" },
+                { home: "VfB Bottrop", away: "Mülheimer FC 97", date: "2027-04-18", time: "15:15" },
+                { home: "VSF Amern", away: "SC Union Nettetal", date: "2027-04-18", time: "15:30" },
+                { home: "Rheinland Hamborn", away: "VFB Homberg", date: "2027-04-18", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "ASV Süchteln", date: "2027-04-18", time: "15:30" }
+            ],
+            "28": [
+                { home: "SV Budberg", away: "Rheinland Hamborn", date: "2027-04-25", time: "15:00" },
+                { home: "VfL Rhede", away: "Sportfreunde 06 Neuwerk", date: "2027-04-25", time: "15:00" },
+                { home: "ASV Süchteln", away: "SV Viktoria Goch", date: "2027-04-25", time: "15:00" },
+                { home: "VFB Homberg", away: "VfB Bottrop", date: "2027-04-25", time: "15:00" },
+                { home: "SV Biemenhorst", away: "1. FC Lintfort", date: "2027-04-25", time: "15:15" },
+                { home: "VfB Speldorf", away: "1. FC Kleve", date: "2027-04-25", time: "15:30" },
+                { home: "SC Union Nettetal", away: "SC Victoria Mennrath", date: "2027-04-25", time: "15:30" },
+                { home: "Duisburger FV 08", away: "VSF Amern", date: "2027-04-25", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "DJK Arminia Klosterhardt", date: "2027-04-25", time: "15:30" }
+            ],
+            "29": [
+                { home: "SC Victoria Mennrath", away: "Duisburger FV 08", date: "2027-04-30", time: "20:00" },
+                { home: "SV Viktoria Goch", away: "Mülheimer FC 97", date: "2027-04-30", time: "20:00" },
+                { home: "1. FC Kleve", away: "SC Union Nettetal", date: "2027-05-02", time: "15:00" },
+                { home: "1. FC Lintfort", away: "VfB Speldorf", date: "2027-05-02", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "SV Biemenhorst", date: "2027-05-02", time: "15:00" },
+                { home: "VfB Bottrop", away: "SV Budberg", date: "2027-05-02", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "VfL Rhede", date: "2027-05-02", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "VFB Homberg", date: "2027-05-02", time: "15:30" },
+                { home: "VSF Amern", away: "ASV Süchteln", date: "2027-05-02", time: "15:30" }
+            ],
+            "30": [
+                { home: "Sportfreunde 06 Neuwerk", away: "1. FC Lintfort", date: "2027-05-09", time: "15:00" },
+                { home: "ASV Süchteln", away: "SC Victoria Mennrath", date: "2027-05-09", time: "15:00" },
+                { home: "VFB Homberg", away: "SV Viktoria Goch", date: "2027-05-09", time: "15:00" },
+                { home: "SV Budberg", away: "DJK Arminia Klosterhardt", date: "2027-05-09", time: "15:00" },
+                { home: "VfL Rhede", away: "VfB Bottrop", date: "2027-05-09", time: "15:00" },
+                { home: "SV Biemenhorst", away: "Rheinland Hamborn", date: "2027-05-09", time: "15:15" },
+                { home: "SC Union Nettetal", away: "VfB Speldorf", date: "2027-05-09", time: "15:30" },
+                { home: "Duisburger FV 08", away: "1. FC Kleve", date: "2027-05-09", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "VSF Amern", date: "2027-05-09", time: "15:30" }
+            ],
+            "31": [
+                { home: "SV Viktoria Goch", away: "SV Budberg", date: "2027-05-21", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "Mülheimer FC 97", date: "2027-05-21", time: "20:00" },
+                { home: "1. FC Lintfort", away: "SC Union Nettetal", date: "2027-05-23", time: "15:00" },
+                { home: "1. FC Kleve", away: "ASV Süchteln", date: "2027-05-23", time: "15:00" },
+                { home: "VfB Bottrop", away: "SV Biemenhorst", date: "2027-05-23", time: "15:15" },
+                { home: "VfB Speldorf", away: "Duisburger FV 08", date: "2027-05-23", time: "15:30" },
+                { home: "Rheinland Hamborn", away: "Sportfreunde 06 Neuwerk", date: "2027-05-23", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "VfL Rhede", date: "2027-05-23", time: "15:30" },
+                { home: "VSF Amern", away: "VFB Homberg", date: "2027-05-23", time: "15:30" }
+            ],
+            "32": [
+                { home: "ASV Süchteln", away: "VfB Speldorf", date: "2027-05-30", time: "15:00" },
+                { home: "VFB Homberg", away: "SC Victoria Mennrath", date: "2027-05-30", time: "15:00" },
+                { home: "SV Budberg", away: "VSF Amern", date: "2027-05-30", time: "15:00" },
+                { home: "VfL Rhede", away: "SV Viktoria Goch", date: "2027-05-30", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "VfB Bottrop", date: "2027-05-30", time: "15:00" },
+                { home: "SV Biemenhorst", away: "DJK Arminia Klosterhardt", date: "2027-05-30", time: "15:15" },
+                { home: "Rheinland Hamborn", away: "1. FC Lintfort", date: "2027-05-30", time: "15:30" },
+                { home: "Duisburger FV 08", away: "SC Union Nettetal", date: "2027-05-30", time: "15:30" },
+                { home: "Mülheimer FC 97", away: "1. FC Kleve", date: "2027-05-30", time: "15:30" }
+            ],
+            "33": [
+                { home: "SV Viktoria Goch", away: "SV Biemenhorst", date: "2027-06-04", time: "20:00" },
+                { home: "SC Victoria Mennrath", away: "SV Budberg", date: "2027-06-04", time: "20:00" },
+                { home: "1. FC Kleve", away: "VFB Homberg", date: "2027-06-06", time: "15:00" },
+                { home: "VfB Bottrop", away: "Rheinland Hamborn", date: "2027-06-06", time: "15:15" },
+                { home: "Duisburger FV 08", away: "1. FC Lintfort", date: "2027-06-06", time: "15:30" },
+                { home: "DJK Arminia Klosterhardt", away: "Sportfreunde 06 Neuwerk", date: "2027-06-06", time: "15:30" },
+                { home: "VSF Amern", away: "VfL Rhede", date: "2027-06-06", time: "15:30" },
+                { home: "VfB Speldorf", away: "Mülheimer FC 97", date: "2027-06-06", time: "15:30" },
+                { home: "SC Union Nettetal", away: "ASV Süchteln", date: "2027-06-06", time: "15:30" }
+            ],
+            "34": [
+                { home: "ASV Süchteln", away: "Duisburger FV 08", date: "2027-06-13", time: "15:00" },
+                { home: "VFB Homberg", away: "VfB Speldorf", date: "2027-06-13", time: "15:00" },
+                { home: "SV Budberg", away: "1. FC Kleve", date: "2027-06-13", time: "15:00" },
+                { home: "VfL Rhede", away: "SC Victoria Mennrath", date: "2027-06-13", time: "15:00" },
+                { home: "Sportfreunde 06 Neuwerk", away: "SV Viktoria Goch", date: "2027-06-13", time: "15:00" },
+                { home: "1. FC Lintfort", away: "VfB Bottrop", date: "2027-06-13", time: "15:00" },
+                { home: "SV Biemenhorst", away: "VSF Amern", date: "2027-06-13", time: "15:15" },
+                { home: "Mülheimer FC 97", away: "SC Union Nettetal", date: "2027-06-13", time: "15:30" },
+                { home: "Rheinland Hamborn", away: "DJK Arminia Klosterhardt", date: "2027-06-13", time: "15:30" }
+            ]
+        }
+    };
+
+    function toggleAdminMode() {
+        const adminCard = document.getElementById('adminCard');
+        if (isAdmin) {
+            isAdmin = false;
+            adminCard.style.display = 'none';
+            renderMatchdayTable();
+            return;
+        }
+        let enteredPin = prompt("Bitte Admin-PIN eingeben:");
+        if (enteredPin === ADMIN_PIN) {
+            isAdmin = true;
+            adminCard.style.display = 'block';
+            renderAll();
+        } else if (enteredPin !== null) {
+            alert("Falsche PIN!");
+        }
+    }
+
+    async function loadFromCloud() {
+        try {
+            let { data, error } = await supabaseClient
+                .from('landesliga')
+                .select('payload')
+                .eq('id', 'landesliga_budberg')
+                .single();
+
+            if (data && data.payload) {
+                let cloudData = data.payload;
+                if (cloudData && cloudData.matches) {
+                    leagueData.currentMatchday = cloudData.currentMatchday || leagueData.currentMatchday;
+                    mergeMatches(cloudData);
+                }
+            } else {
+                saveToCloud();
+            }
+        } catch (e) {
+            console.log('Fehler beim Laden aus Supabase:', e);
+        }
+        renderAll();
+    }
+
+    function mergeMatches(sourceData) {
+        if (!sourceData || !sourceData.matches) return;
+        for (let mDay in sourceData.matches) {
+            if (leagueData.matches[mDay]) {
+                sourceData.matches[mDay].forEach((savedM, sIdx) => {
+                    if (leagueData.matches[mDay][sIdx]) {
+                        if (savedM.homeScore !== undefined && savedM.homeScore !== null) {
+                            leagueData.matches[mDay][sIdx].homeScore = savedM.homeScore;
+                        }
+                        if (savedM.awayScore !== undefined && savedM.awayScore !== null) {
+                            leagueData.matches[mDay][sIdx].awayScore = savedM.awayScore;
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    async function saveToCloud() {
+        try {
+            let { error } = await supabaseClient
+                .from('landesliga')
+                .upsert({ id: 'landesliga_budberg', payload: leagueData });
+
+            if (error) {
+                console.error('Fehler beim Speichern in Supabase:', error);
+                alert("Fehler beim Speichern in Supabase!");
+            }
+        } catch (e) {
+            console.error('Netzwerkfehler:', e);
+        }
+    }
+
+    function changeMatchday(amount) {
+        leagueData.currentMatchday = Math.max(1, Math.min(34, leagueData.currentMatchday + amount));
+        saveAndSync();
+    }
+
+    function renderAll() {
+        document.getElementById('matchdayDisplay').textContent = `Spieltag ${leagueData.currentMatchday}`;
+        document.getElementById('adminMatchdayLabel').textContent = `Spieltag ${leagueData.currentMatchday}`;
+        document.getElementById('matchdayTableHeader').textContent = `Spieltag ${leagueData.currentMatchday} — Spiele & Ergebnisse`;
+        
+        renderMatchdayTable();
+        renderTable();
+        if (isAdmin) renderInputForm();
+    }
+
+    function renderMatchdayTable() {
+        let tbody = document.getElementById('matchdayTableBody');
+        tbody.innerHTML = '';
+        let existingMatches = leagueData.matches[leagueData.currentMatchday] || [];
+
+        if (existingMatches.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Keine Spiele für Spieltag ${leagueData.currentMatchday} erfasst.</td></tr>`;
+            return;
+        }
+
+        existingMatches.forEach((m, idx) => {
+            let hasResult = m.homeScore !== undefined && m.awayScore !== undefined;
+            let formattedDate = m.date ? m.date.split('-').reverse().join('.') : '-';
+            let timeStr = m.time ? ` ${m.time} Uhr` : '';
+            
+            let homeClass = m.home === "SV Budberg" ? 'svb-highlight' : '';
+            let awayClass = m.away === "SV Budberg" ? 'svb-highlight' : '';
+
+            let resultDisplay = hasResult 
+                ? `<strong>${m.homeScore}:${m.awayScore}</strong>` 
+                : `<span style="color: var(--text-muted); font-style: italic;">vs</span>`;
+
+            let deleteBtn = isAdmin ? `<button class="btn-danger" onclick="deleteMatchResult(${idx})" title="Ergebnis löschen">✕</button>` : '';
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-size: 0.8rem; color: var(--svb-bright-blue);">${formattedDate}${timeStr}</td>
+                <td class="${homeClass}" style="text-align: right;">${m.home}</td>
+                <td style="text-align: center;">${resultDisplay}</td>
+                <td class="${awayClass}">${m.away}</td>
+                <td style="text-align: center;">${deleteBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderTable() {
+        let tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        let stats = {};
+        leagueData.teams.forEach(t => {
+            stats[t] = { name: t, played: 0, won: 0, draw: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 };
+        });
+
+        Object.values(leagueData.matches).forEach(matchList => {
+            if (!Array.isArray(matchList)) return;
+            matchList.forEach(m => {
+                if (m.homeScore === undefined || m.awayScore === undefined || !stats[m.home] || !stats[m.away]) return;
+                
+                stats[m.home].played++;
+                stats[m.away].played++;
+                stats[m.home].goalsFor += m.homeScore;
+                stats[m.home].goalsAgainst += m.awayScore;
+                stats[m.away].goalsFor += m.awayScore;
+                stats[m.away].goalsAgainst += m.homeScore;
+
+                if (m.homeScore > m.awayScore) {
+                    stats[m.home].won++;
+                    stats[m.home].points += 3;
+                    stats[m.away].lost++;
+                } else if (m.homeScore < m.awayScore) {
+                    stats[m.away].won++;
+                    stats[m.away].points += 3;
+                    stats[m.home].lost++;
+                } else {
+                    stats[m.home].draw++;
+                    stats[m.home].points += 1;
+                    stats[m.away].draw++;
+                    stats[m.away].points += 1;
+                }
+            });
+        });
+
+        let sorted = Object.values(stats).sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            let diffB = b.goalsFor - b.goalsAgainst;
+            let diffA = a.goalsFor - a.goalsAgainst;
+            if (diffB !== diffA) return diffB - diffA;
+            return b.goalsFor - a.goalsFor;
+        });
+
+        sorted.forEach((s, idx) => {
+            let tr = document.createElement('tr');
+            if (idx === 0) tr.classList.add('rank-first');
+            else if (idx >= sorted.length - 3 && sorted.length > 3) tr.classList.add('rank-last');
+            if (s.name === "SV Budberg") tr.classList.add('svb-team-row');
+
+            let diff = s.goalsFor - s.goalsAgainst;
+
+            tr.innerHTML = `
+                <td><strong>${idx + 1}.</strong></td>
+                <td>${s.name}</td>
+                <td style="text-align: center;">${s.played}</td>
+                <td style="text-align: center;">${s.won}</td>
+                <td style="text-align: center;">${s.draw}</td>
+                <td style="text-align: center;">${s.lost}</td>
+                <td style="text-align: center;">${s.goalsFor}:${s.goalsAgainst}</td>
+                <td style="text-align: center;">${diff > 0 ? '+' : ''}${diff}</td>
+                <td style="text-align: center; font-weight: bold;">${s.points}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderInputForm() {
+        let container = document.getElementById('matchInputsContainer');
+        container.innerHTML = '';
+        let existingMatches = leagueData.matches[leagueData.currentMatchday] || [];
+
+        if (existingMatches.length === 0) {
+            container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 15px;">Keine Spiele für diesen Spieltag hinterlegt.</div>`;
+            return;
+        }
+
+        existingMatches.forEach((m, idx) => {
+            let card = document.createElement('div');
+            card.className = 'match-input-card';
+
+            card.innerHTML = `
+                <div style="font-size: 0.8rem; color: var(--svb-bright-blue); font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Partie ${idx + 1}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">${m.date ? m.date.split('-').reverse().join('.') : ''} ${m.time || ''} Uhr</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group form-group-team">
+                        <label>Heim</label>
+                        <span style="font-size: 0.8rem; font-weight: bold; color: var(--text-color);">${m.home}</span>
+                    </div>
+                    <div class="form-group form-group-team">
+                        <label>Gast</label>
+                        <span style="font-size: 0.8rem; font-weight: bold; color: var(--text-color);">${m.away}</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Tore Heim</label>
+                        <input type="number" id="hs_${idx}" class="form-control" value="${m.homeScore !== undefined ? m.homeScore : ''}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Tore Gast</label>
+                        <input type="number" id="as_${idx}" class="form-control" value="${m.awayScore !== undefined ? m.awayScore : ''}" min="0">
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function saveAllMatches() {
+        let existingMatches = leagueData.matches[leagueData.currentMatchday] || [];
+
+        for (let idx = 0; idx < existingMatches.length; idx++) {
+            let hsVal = document.getElementById(`hs_${idx}`).value;
+            let asVal = document.getElementById('as_' + idx).value;
+
+            if (hsVal !== '' && asVal !== '') {
+                existingMatches[idx].homeScore = parseInt(hsVal);
+                existingMatches[idx].awayScore = parseInt(asVal);
+            } else {
+                delete existingMatches[idx].homeScore;
+                delete existingMatches[idx].awayScore;
+            }
+        }
+
+        saveAndSync();
+    }
+
+    function deleteMatchResult(idx) {
+        let existingMatches = leagueData.matches[leagueData.currentMatchday];
+        if (existingMatches && existingMatches[idx]) {
+            delete existingMatches[idx].homeScore;
+            delete existingMatches[idx].awayScore;
+            saveAndSync();
+        }
+    }
+
+    function saveAndSync() {
+        renderAll();
+        saveToCloud();
+    }
+
+    loadFromCloud();
+</script>
+
+</body>
+</html>
