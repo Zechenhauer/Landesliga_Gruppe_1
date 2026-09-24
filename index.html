@@ -8,17 +8,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --text-color: #c9d1d9;
-            --text-muted: #8b949e;
-            --border-color: #30363d;
-            --primary-blue: #0c2340;
-            --primary-blue-hover: #16365c;
+            --bg-color: #0b0b0b;
+            --card-bg: #141414;
+            --text-color: #f0f0f0;
+            --text-muted: #888888;
+            --border-color: #262626;
+            --primary-dark: #000000;
+            --primary-hover: #1f1f1f;
             --accent-green: #2ea043;
             --accent-red: #f85149;
-            --svb-bright-blue: #58a6ff;
-            --svb-gold: #ffcc00;
+            --svb-white: #ffffff;
+            --svb-gold: #f1e05a;
         }
 
         * { box-sizing: border-box; }
@@ -39,7 +39,18 @@
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+
+        .banner-container {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .banner-logo {
+            max-height: 90px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 8px rgba(255,255,255,0.1));
         }
 
         .title-row {
@@ -53,12 +64,14 @@
         h2 {
             text-align: center;
             margin: 0;
-            color: #ffffff;
+            color: var(--svb-white);
             font-size: 1.6rem;
             font-weight: 800;
+            letter-spacing: 0.5px;
         }
         h2 span {
-            color: var(--svb-bright-blue);
+            color: var(--text-muted);
+            font-weight: 400;
         }
 
         .subtitle {
@@ -70,7 +83,7 @@
         }
 
         .section-box {
-            background: #0d1117;
+            background: #090909;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 15px;
@@ -78,8 +91,8 @@
         }
 
         .section-header {
-            background-color: var(--primary-blue);
-            color: var(--svb-bright-blue);
+            background-color: var(--primary-dark);
+            color: var(--svb-white);
             border: 1px solid var(--border-color);
             padding: 10px 15px;
             font-weight: bold;
@@ -97,8 +110,8 @@
         }
 
         .btn-modal-open {
-            background: var(--svb-gold);
-            color: #0d1117;
+            background: var(--svb-white);
+            color: #000000;
             border: none;
             padding: 5px 12px;
             border-radius: 4px;
@@ -108,13 +121,13 @@
             text-transform: uppercase;
             transition: background 0.2s;
         }
-        .btn-modal-open:hover { background: #ffdb4d; }
+        .btn-modal-open:hover { background: #dcdcdc; }
 
         /* MODAL / POPUP STILE */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.85);
             backdrop-filter: blur(4px);
             display: none;
             justify-content: center;
@@ -123,8 +136,8 @@
             padding: 15px;
         }
         .modal-card {
-            background: #161b22;
-            border: 1px solid var(--svb-bright-blue);
+            background: #141414;
+            border: 1px solid var(--svb-white);
             border-radius: 12px;
             padding: 20px;
             width: 100%;
@@ -132,7 +145,7 @@
             max-height: 85vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         .modal-body {
             overflow-y: auto;
@@ -140,7 +153,7 @@
         }
 
         .svb-badge-win {
-            background: rgba(46, 160, 67, 0.25);
+            background: rgba(46, 160, 67, 0.2);
             color: #3fb950;
             padding: 3px 8px;
             border-radius: 4px;
@@ -148,7 +161,7 @@
             font-weight: bold;
         }
         .svb-badge-draw {
-            background: rgba(227, 179, 64, 0.25);
+            background: rgba(227, 179, 64, 0.2);
             color: #e3b341;
             padding: 3px 8px;
             border-radius: 4px;
@@ -156,7 +169,7 @@
             font-weight: bold;
         }
         .svb-badge-loss {
-            background: rgba(248, 81, 73, 0.25);
+            background: rgba(248, 81, 73, 0.2);
             color: #f85149;
             padding: 3px 8px;
             border-radius: 4px;
@@ -171,7 +184,7 @@
             margin-bottom: 5px;
         }
         .stat-card {
-            background: #161b22;
+            background: #141414;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 10px;
@@ -180,7 +193,7 @@
         .stat-value {
             font-size: 1.2rem;
             font-weight: bold;
-            color: var(--svb-bright-blue);
+            color: var(--svb-white);
             margin-top: 4px;
         }
         .stat-label {
@@ -198,7 +211,7 @@
         }
 
         .matchday-btn {
-            background: #21262d;
+            background: #1f1f1f;
             border: 1px solid var(--border-color);
             color: var(--text-color);
             padding: 6px 12px;
@@ -207,9 +220,9 @@
             font-weight: bold;
             transition: background 0.2s;
         }
-        .matchday-btn:hover { background: var(--primary-blue-hover); border-color: var(--svb-bright-blue); }
+        .matchday-btn:hover { background: #333333; border-color: var(--svb-white); }
 
-        .svb-highlight { color: var(--svb-bright-blue) !important; font-weight: bold; }
+        .svb-highlight { color: var(--svb-white) !important; font-weight: bold; text-decoration: underline; }
 
         .table-container {
             width: 100%;
@@ -222,8 +235,8 @@
             font-size: 0.85rem;
         }
         th {
-            background-color: var(--primary-blue);
-            color: #ffffff;
+            background-color: var(--primary-dark);
+            color: var(--svb-white);
             padding: 10px 8px;
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -235,11 +248,12 @@
             border-bottom: 1px solid var(--border-color);
             white-space: nowrap;
         }
-        tr:hover { background-color: rgba(255,255,255,0.02); }
+        tr:hover { background-color: rgba(255,255,255,0.03); }
 
         tr.rank-first td {
-            background: rgba(46, 160, 67, 0.12);
-            color: #3fb950;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--svb-white);
+            font-weight: bold;
         }
         tr.rank-last td {
             background: rgba(248, 81, 73, 0.12);
@@ -248,8 +262,8 @@
 
         tr.svb-team-row td {
             font-weight: bold;
-            color: var(--svb-bright-blue);
-            background: rgba(88, 166, 255, 0.12);
+            color: var(--svb-white);
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .admin-toggle-wrapper {
@@ -267,20 +281,20 @@
             transition: all 0.2s;
         }
         .admin-toggle-btn:hover {
-            color: var(--svb-bright-blue);
-            border-color: var(--svb-bright-blue);
+            color: var(--svb-white);
+            border-color: var(--svb-white);
         }
 
         .admin-card {
-            background: #21262d;
-            border: 1px solid var(--svb-bright-blue);
+            background: #1a1a1a;
+            border: 1px solid var(--svb-white);
             border-radius: 8px;
             padding: 15px;
             margin-top: 15px;
             display: none;
         }
         .match-input-card {
-            background: #161b22;
+            background: #141414;
             border: 1px solid var(--border-color);
             padding: 10px;
             border-radius: 6px;
@@ -306,16 +320,16 @@
         .form-control {
             width: 100%;
             padding: 6px;
-            background: #0d1117;
+            background: #000000;
             border: 1px solid var(--border-color);
             color: var(--text-color);
             border-radius: 4px;
             font-size: 0.8rem;
         }
-        .form-control:focus { border-color: var(--svb-bright-blue); outline: none; }
+        .form-control:focus { border-color: var(--svb-white); outline: none; }
 
         .btn {
-            background: var(--svb-bright-blue);
+            background: var(--svb-white);
             color: #000000;
             border: none;
             padding: 10px 18px;
@@ -328,7 +342,7 @@
             margin-top: 10px;
             transition: background 0.2s;
         }
-        .btn:hover { background: #79c0ff; }
+        .btn:hover { background: #dcdcdc; }
         
         .btn-danger {
             background: transparent;
@@ -343,6 +357,11 @@
 <body>
 
 <div class="container">
+    <!-- VEREINS-BANNER -->
+    <div class="banner-container">
+        <img src="https://lhusylpjnujlqomougmg.supabase.co/storage/v1/object/public/vereinslogos/sv%20budberg.png" alt="SV Budberg Logo" class="banner-logo">
+    </div>
+
     <div class="title-row">
         <h2>SV Budberg <span>Landesliga</span></h2>
     </div>
@@ -363,7 +382,7 @@
         <div class="section-header" id="matchdayTableHeader">Spieltag 1 — Spiele & Ergebnisse</div>
         <div class="matchday-controls">
             <button class="matchday-btn" onclick="changeMatchday(-1)">◀ Vorheriger Spieltag</button>
-            <strong id="matchdayDisplay" style="color: var(--svb-bright-blue); font-size: 1.1rem;">Spieltag 1</strong>
+            <strong id="matchdayDisplay" style="color: var(--svb-white); font-size: 1.1rem;">Spieltag 1</strong>
             <button class="matchday-btn" onclick="changeMatchday(1)">Nächster Spieltag ▶</button>
         </div>
         <div class="table-container">
@@ -408,14 +427,14 @@
             </table>
         </div>
         <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 0.75rem; color: var(--text-muted);">
-            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(46, 160, 67, 0.2); border-radius: 2px; display: inline-block;"></span> Aufstiegsplatz (Oberliga)</div>
+            <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; display: inline-block;"></span> Aufstiegsplatz (Oberliga)</div>
             <div style="display: flex; align-items: center; gap: 5px;"><span style="width: 12px; height: 12px; background: rgba(248, 81, 73, 0.2); border-radius: 2px; display: inline-block;"></span> Abstiegsplatz</div>
         </div>
     </div>
 
     <!-- ERGEBNISSE EINTRAGEN / BEARBEITEN -->
     <div class="admin-card" id="adminCard">
-        <div style="font-weight: bold; color: var(--svb-bright-blue); margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: bold; color: var(--svb-white); margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
             <span>✏️ Ergebnisse für <span id="adminMatchdayLabel">Spieltag 1</span> erfassen</span>
             <span style="font-size: 0.7rem; color: var(--accent-green);">● Admin-Modus Aktiv</span>
         </div>
@@ -918,7 +937,6 @@
             console.log('Fehler beim Laden aus Supabase:', e);
         }
         
-        // Spieltag aus localStorage sicherstellen
         leagueData.currentMatchday = getStoredMatchday();
         renderAll();
     }
@@ -965,7 +983,6 @@
     }
 
     function renderAll() {
-        // Aktuellen Spieltag stets frisch aus localStorage absichern
         leagueData.currentMatchday = getStoredMatchday();
 
         document.getElementById('matchdayDisplay').textContent = `Spieltag ${leagueData.currentMatchday}`;
@@ -1004,7 +1021,7 @@
 
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-size: 0.8rem; color: var(--svb-bright-blue);">${formattedDate}${timeStr}</td>
+                <td style="font-size: 0.8rem; color: var(--svb-white);">${formattedDate}${timeStr}</td>
                 <td class="${homeClass}" style="text-align: right;">${m.home}</td>
                 <td style="text-align: center;">${resultDisplay}</td>
                 <td class="${awayClass}">${m.away}</td>
@@ -1014,7 +1031,6 @@
         });
     }
 
-    // SV Budberg Saison-Auswertung Kacheln berechnen
     function renderSvbStats() {
         let played = 0, won = 0, draw = 0, lost = 0, goalsFor = 0, goalsAgainst = 0, points = 0;
 
@@ -1049,7 +1065,6 @@
         `;
     }
 
-    // Modal: Alle SV Budberg Spiele anzeigen
     function openSvbMatchesModal() {
         let modalBody = document.getElementById('svbMatchesModalBody');
         modalBody.innerHTML = '';
@@ -1095,7 +1110,7 @@
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="text-align: center; color: var(--svb-bright-blue); font-weight: bold;">ST ${m.matchday}</td>
+                    <td style="text-align: center; color: var(--svb-white); font-weight: bold;">ST ${m.matchday}</td>
                     <td style="font-size: 0.8rem; color: var(--text-muted);">${formattedDate}</td>
                     <td style="text-align: right;">${homeDisplay}</td>
                     <td style="text-align: center;">${resultDisplay}</td>
@@ -1196,7 +1211,7 @@
             card.className = 'match-input-card';
 
             card.innerHTML = `
-                <div style="font-size: 0.8rem; color: var(--svb-bright-blue); font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.8rem; color: var(--svb-white); font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <span>Partie ${idx + 1}</span>
                     <span style="font-size: 0.75rem; color: var(--text-muted);">${m.date ? m.date.split('-').reverse().join('.') : ''} ${m.time || ''} Uhr</span>
                 </div>
@@ -1254,7 +1269,6 @@
         }
     }
 
-    // Modal bei Klick außerhalb schließen
     window.onclick = function(e) {
         let modal = document.getElementById('svbMatchesModal');
         if (e.target === modal) {
