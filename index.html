@@ -918,6 +918,7 @@
             console.log('Fehler beim Laden aus Supabase:', e);
         }
         
+        // Spieltag aus localStorage sicherstellen
         leagueData.currentMatchday = getStoredMatchday();
         renderAll();
     }
@@ -955,12 +956,18 @@
     }
 
     function changeMatchday(amount) {
-        leagueData.currentMatchday = Math.max(1, Math.min(34, leagueData.currentMatchday + amount));
-        localStorage.setItem('budberg_current_matchday', leagueData.currentMatchday);
-        saveAndSync();
+        let newDay = leagueData.currentMatchday + amount;
+        if (newDay >= 1 && newDay <= 34) {
+            leagueData.currentMatchday = newDay;
+            localStorage.setItem('budberg_current_matchday', leagueData.currentMatchday);
+            renderAll();
+        }
     }
 
     function renderAll() {
+        // Aktuellen Spieltag stets frisch aus localStorage absichern
+        leagueData.currentMatchday = getStoredMatchday();
+
         document.getElementById('matchdayDisplay').textContent = `Spieltag ${leagueData.currentMatchday}`;
         document.getElementById('adminMatchdayLabel').textContent = `Spieltag ${leagueData.currentMatchday}`;
         document.getElementById('matchdayTableHeader').textContent = `Spieltag ${leagueData.currentMatchday} — Spiele & Ergebnisse`;
@@ -1232,7 +1239,8 @@
             }
         }
 
-        saveAndSync();
+        renderAll();
+        saveToCloud();
         alert("Ergebnisse erfolgreich gespeichert!");
     }
 
@@ -1241,13 +1249,9 @@
         if (existingMatches && existingMatches[idx]) {
             delete existingMatches[idx].homeScore;
             delete existingMatches[idx].awayScore;
-            saveAndSync();
+            renderAll();
+            saveToCloud();
         }
-    }
-
-    function saveAndSync() {
-        renderAll();
-        saveToCloud();
     }
 
     // Modal bei Klick außerhalb schließen
