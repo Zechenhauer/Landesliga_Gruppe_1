@@ -71,10 +71,6 @@
             gap: 15px;
             flex-wrap: wrap;
         }
-        .banner-footer img.mini-logo {
-            height: 35px;
-            width: auto;
-        }
         .banner-title {
             color: var(--svb-white);
             font-size: 1.4rem;
@@ -194,7 +190,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
         }
         .stat-card {
             background: #141414;
@@ -214,6 +210,40 @@
             color: var(--text-muted);
             text-transform: uppercase;
         }
+
+        /* FORMVERLAUF KACHEL */
+        .form-trend-box {
+            background: #141414;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .trend-badges {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .trend-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .trend-w { background-color: #3fb950; }
+        .trend-d { background-color: #e3b341; color: #0b0b0b; }
+        .trend-l { background-color: #f85149; }
 
         .matchday-controls {
             display: flex;
@@ -388,6 +418,13 @@
             <button class="btn-modal-open" onclick="openSvbMatchesModal()">📅 Alle Spiele Budberg</button>
         </div>
         <div class="stats-grid" id="svbStatsGrid"></div>
+
+        <div class="form-trend-box">
+            <span style="font-size: 0.8rem; font-weight: bold; color: var(--text-muted);">Formverlauf (letzte 12 Spiele):</span>
+            <div class="trend-badges" id="svbTrendContainer">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Noch keine Spiele gespielt</span>
+            </div>
+        </div>
     </div>
 
     <!-- SPIELTAGS-TABELLE -->
@@ -1046,9 +1083,15 @@
 
     function renderSvbStats() {
         let played = 0, won = 0, draw = 0, lost = 0, goalsFor = 0, goalsAgainst = 0, points = 0;
+        let matchHistory = [];
 
-        Object.values(leagueData.matches).forEach(matchList => {
+        // Alle Spieltage sortiert durchgehen
+        let sortedMatchdays = Object.keys(leagueData.matches).map(Number).sort((a, b) => a - b);
+
+        sortedMatchdays.forEach(mDay => {
+            let matchList = leagueData.matches[mDay];
             if (!Array.isArray(matchList)) return;
+
             matchList.forEach(m => {
                 let isHome = m.home === "SV Budberg";
                 let isAway = m.away === "SV Budberg";
@@ -1061,9 +1104,12 @@
                     goalsFor += myG;
                     goalsAgainst += oppG;
 
-                    if (myG > oppG) { won++; points += 3; }
-                    else if (myG === oppG) { draw++; points += 1; }
-                    else { lost++; }
+                    let res = '';
+                    if (myG > oppG) { won++; points += 3; res = 'W'; }
+                    else if (myG === oppG) { draw++; points += 1; res = 'D'; }
+                    else { lost++; res = 'L'; }
+
+                    matchHistory.push({ result: res, matchday: mDay });
                 }
             });
         });
@@ -1076,6 +1122,23 @@
             <div class="stat-card"><div class="stat-label">Tore</div><div class="stat-value">${goalsFor}:${goalsAgainst}</div></div>
             <div class="stat-card"><div class="stat-label">Punkte</div><div class="stat-value">${points}</div></div>
         `;
+
+        // Formverlauf Rendern (Letzte 12 Spiele)
+        let trendContainer = document.getElementById('svbTrendContainer');
+        trendContainer.innerHTML = '';
+
+        if (matchHistory.length === 0) {
+            trendContainer.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Noch keine Ergebnisse eingetragen</span>`;
+        } else {
+            let lastTwelve = matchHistory.slice(-12);
+            lastTwelve.forEach(h => {
+                let badge = document.createElement('div');
+                badge.className = `trend-badge trend-${h.result.toLowerCase()}`;
+                badge.textContent = h.result === 'W' ? 'S' : (h.result === 'D' ? 'U' : 'N');
+                badge.title = `Spieltag ${h.matchday}: ${h.result === 'W' ? 'Sieg' : (h.result === 'D' ? 'Unentschieden' : 'Niederlage')}`;
+                trendContainer.appendChild(badge);
+            });
+        }
     }
 
     function openSvbMatchesModal() {
